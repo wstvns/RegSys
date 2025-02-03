@@ -4,25 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Cadastro</title>
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <h1>Sistema de Cadastro</h1>
     
     <form id="cadastroForm">
-        <input type="text" id="nome" name="nome" placeholder="Nome" required>
-        <input type="date" id="dataNascimento" name="dataNascimento" required>
-        <input type="tel" id="telefone" name="telefone" placeholder="WhatsApp" required>
-        <input type="email" id="email" name="email" placeholder="E-mail" required>
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" placeholder="Nome" required aria-label="Nome">
+        
+        <label for="dataNascimento">Data de Nascimento:</label>
+        <input type="date" id="dataNascimento" name="dataNascimento" required aria-label="Data de Nascimento">
+        
+        <label for="telefone">WhatsApp:</label>
+        <input type="tel" id="telefone" name="telefone" placeholder="WhatsApp" required aria-label="WhatsApp">
+        
+        <label for="email">E-mail:</label>
+        <input type="email" id="email" name="email" placeholder="E-mail" required aria-label="E-mail">
+        
         <button type="submit">Cadastrar</button>
     </form>
 
+    <div id="mensagemFeedback"></div>
+
     <h2>Pesquisar Cadastros</h2>
-    <input type="text" id="pesquisaInput" placeholder="Pesquisar por nome...">
+    <input type="text" id="pesquisaInput" placeholder="Pesquisar por nome..." aria-label="Pesquisar cadastros">
 
     <h2>Cadastros</h2>
     <ul id="listaCadastro"></ul>
 
-    <script src="assets/js/script.js"></script>
+    <script src="js/script.js"></script>
 </body>
 </html>
