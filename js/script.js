@@ -1,61 +1,72 @@
-function CadastroManager() {
-    const localStorageKey = 'cadastros';
-
-    function obterCadastros() {
-        const cadastros = JSON.parse(localStorage.getItem(localStorageKey));
-        if (cadastros) {
-            return cadastros;
-        } else {
-            return [];
-        }
+class CadastroManager {
+    constructor() {
+        this.localStorageKey = 'cadastros';
     }
 
-    function atualizarLocalStorage(cadastros) {
+    obterCadastros() {
+        const cadastros = JSON.parse(localStorage.getItem(this.localStorageKey));
+        return cadastros || [];
+    }
+
+    atualizarLocalStorage(cadastros) {
         if (cadastros && cadastros.length > 0) {
-            localStorage.setItem(localStorageKey, JSON.stringify(cadastros));
+            localStorage.setItem(this.localStorageKey, JSON.stringify(cadastros));
         } else {
-            localStorage.removeItem(localStorageKey);
+            localStorage.removeItem(this.localStorageKey);
         }
     }
 
-    function criarCadastro(nome, dataNascimento, telefone, email) {
+    validarEmail(email) {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return regex.test(email);
+    }
+
+    validarTelefone(telefone) {
+        const regex = /^\d{10,11}$/; // Aceita 10 ou 11 dígitos
+        return regex.test(telefone);
+    }
+
+    criarCadastro(nome, dataNascimento, telefone, email) {
         if (nome && dataNascimento && telefone && email) {
+            if (!this.validarEmail(email)) {
+                this.mostrarMensagem('Por favor, insira um e-mail válido.', 'erro');
+                return null;
+            }
+            if (!this.validarTelefone(telefone)) {
+                this.mostrarMensagem('Por favor, insira um telefone válido (10 ou 11 dígitos).', 'erro');
+                return null;
+            }
             return { id: Date.now(), nome, dataNascimento, telefone, email };
         } else {
-            console.error("Todos os campos são obrigatórios para criar um cadastro.");
+            this.mostrarMensagem('Todos os campos são obrigatórios.', 'erro');
             return null;
         }
     }
 
-    function salvarCadastro(cadastro) {
+    salvarCadastro(cadastro) {
         if (cadastro) {
-            const cadastros = obterCadastros();
+            const cadastros = this.obterCadastros();
             cadastros.push(cadastro);
-            atualizarLocalStorage(cadastros);
-            exibirCadastros();
-        } else {
-            console.error("Cadastro inválido, não foi salvo.");
+            this.atualizarLocalStorage(cadastros);
+            this.exibirCadastros();
+            this.mostrarMensagem('Cadastro realizado com sucesso!', 'sucesso');
         }
     }
 
-    function formatarData(data) {
-        if (data) {
-            return data.split('-').reverse().join('/');
-        } else {
-            return '';
-        }
+    formatarData(data) {
+        return data ? data.split('-').reverse().join('/') : '';
     }
 
-    function exibirCadastros(filtro = '') {
+    exibirCadastros(filtro = '') {
         const listaCadastro = document.getElementById('listaCadastro');
-        const cadastros = obterCadastros().filter(cadastro => 
+        const cadastros = this.obterCadastros().filter(cadastro =>
             cadastro.nome.toLowerCase().includes(filtro.toLowerCase())
         );
 
         if (cadastros.length > 0) {
             listaCadastro.innerHTML = cadastros.map(cadastro => `
                 <li>
-                    ${cadastro.nome} - ${formatarData(cadastro.dataNascimento)} - ${cadastro.telefone} - ${cadastro.email}
+                    ${cadastro.nome} - ${this.formatarData(cadastro.dataNascimento)} - ${cadastro.telefone} - ${cadastro.email}
                     <button onclick="cadastroManager.deletarCadastro(${cadastro.id})">Deletar</button>
                 </li>`).join('');
         } else {
@@ -63,50 +74,58 @@ function CadastroManager() {
         }
     }
 
-    function deletarCadastro(id) {
-        const cadastros = obterCadastros();
+    deletarCadastro(id) {
+        const cadastros = this.obterCadastros();
         const novoCadastros = cadastros.filter(cadastro => cadastro.id !== id);
-        
+
         if (novoCadastros.length !== cadastros.length) {
-            atualizarLocalStorage(novoCadastros);
-            exibirCadastros();
+            this.atualizarLocalStorage(novoCadastros);
+            this.exibirCadastros();
+            this.mostrarMensagem('Cadastro deletado com sucesso!', 'sucesso');
         } else {
-            console.error("Erro ao deletar: cadastro não encontrado.");
+            this.mostrarMensagem('Erro ao deletar: cadastro não encontrado.', 'erro');
         }
     }
 
-    return {
-        criarCadastro,
-        salvarCadastro,
-        exibirCadastros,
-        deletarCadastro
-    };
+    mostrarMensagem(mensagem, tipo) {
+        const feedback = document.getElementById('mensagemFeedback');
+        feedback.textContent = mensagem;
+        feedback.className = tipo;
+        setTimeout(() => feedback.textContent = '', 3000);
+    }
 }
 
-const cadastroManager = CadastroManager();
+// Instância da classe CadastroManager
+const cadastroManager = new CadastroManager();
 
+// Evento de submit do formulario
 document.getElementById('cadastroForm').addEventListener('submit', e => {
     e.preventDefault();
     const { nome, dataNascimento, telefone, email } = e.target.elements;
-    
-    if (nome.value && dataNascimento.value && telefone.value && email.value) {
-        const novoCadastro = cadastroManager.criarCadastro(
-            nome.value, dataNascimento.value, telefone.value, email.value
-        );
-        
-        if (novoCadastro) {
-            cadastroManager.salvarCadastro(novoCadastro);
-            e.target.reset();
-        } else {
-            console.error("Erro ao criar o cadastro.");
-        }
-    } else {
-        console.error("Todos os campos do formulário são obrigatórios.");
+
+    const novoCadastro = cadastroManager.criarCadastro(
+        nome.value, dataNascimento.value, telefone.value, email.value
+    );
+
+    if (novoCadastro) {
+        cadastroManager.salvarCadastro(novoCadastro);
+        e.target.reset();
     }
 });
 
-document.getElementById('pesquisaInput').addEventListener('input', e => {
-    cadastroManager.exibirCadastros(e.target.value);
-});
+// Debounce para pesquisa
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
 
+// input para pesquisa
+document.getElementById('pesquisaInput').addEventListener('input', debounce(e => {
+    cadastroManager.exibirCadastros(e.target.value);
+}, 300));
+
+// Exibir cadastros ao carregar a pagina
 document.addEventListener('DOMContentLoaded', () => cadastroManager.exibirCadastros());
