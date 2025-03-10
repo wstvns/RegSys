@@ -53,6 +53,20 @@ class CadastroManager {
         }
     }
 
+    editarCadastro(id, novosDados) {
+        const cadastros = this.obterCadastros();
+        const index = cadastros.findIndex(cadastro => cadastro.id === id);
+
+        if (index !== -1) {
+            cadastros[index] = { ...cadastros[index], ...novosDados };
+            this.atualizarLocalStorage(cadastros);
+            this.exibirCadastros();
+            this.mostrarMensagem('Cadastro atualizado com sucesso!', 'sucesso');
+        } else {
+            this.mostrarMensagem('Erro ao atualizar: cadastro não encontrado.', 'erro');
+        }
+    }
+
     formatarData(data) {
         return data ? data.split('-').reverse().join('/') : '';
     }
@@ -67,10 +81,55 @@ class CadastroManager {
             listaCadastro.innerHTML = cadastros.map(cadastro => `
                 <li>
                     ${cadastro.nome} - ${this.formatarData(cadastro.dataNascimento)} - ${cadastro.telefone} - ${cadastro.email}
+                    <button onclick="cadastroManager.editarFormulario(${cadastro.id})">Editar</button>
                     <button onclick="cadastroManager.deletarCadastro(${cadastro.id})">Deletar</button>
                 </li>`).join('');
         } else {
             listaCadastro.innerHTML = '<li>Nenhum cadastro encontrado.</li>';
+        }
+    }
+
+    editarFormulario(id) {
+        const cadastros = this.obterCadastros();
+        const cadastro = cadastros.find(cadastro => cadastro.id === id);
+
+        if (cadastro) {
+            // Preenche o formulário com os dados do cadastro
+            document.getElementById('nome').value = cadastro.nome;
+            document.getElementById('dataNascimento').value = cadastro.dataNascimento;
+            document.getElementById('telefone').value = cadastro.telefone;
+            document.getElementById('email').value = cadastro.email;
+
+            // Altera o comportamento do botão de submit para atualizar em vez de criar
+            document.getElementById('cadastroForm').onsubmit = e => {
+                e.preventDefault();
+                const { nome, dataNascimento, telefone, email } = e.target.elements;
+
+                const novosDados = {
+                    nome: nome.value,
+                    dataNascimento: dataNascimento.value,
+                    telefone: telefone.value,
+                    email: email.value
+                };
+
+                this.editarCadastro(id, novosDados);
+                e.target.reset();
+
+                // Restaura o comportamento padrão do formulário para criar novos cadastros
+                document.getElementById('cadastroForm').onsubmit = e => {
+                    e.preventDefault();
+                    const { nome, dataNascimento, telefone, email } = e.target.elements;
+
+                    const novoCadastro = this.criarCadastro(
+                        nome.value, dataNascimento.value, telefone.value, email.value
+                    );
+
+                    if (novoCadastro) {
+                        this.salvarCadastro(novoCadastro);
+                        e.target.reset();
+                    }
+                };
+            };
         }
     }
 
@@ -98,7 +157,7 @@ class CadastroManager {
 // Instância da classe CadastroManager
 const cadastroManager = new CadastroManager();
 
-// Evento de submit do formulario
+// Evento de submit do formulário
 document.getElementById('cadastroForm').addEventListener('submit', e => {
     e.preventDefault();
     const { nome, dataNascimento, telefone, email } = e.target.elements;
@@ -122,10 +181,10 @@ function debounce(func, wait) {
     };
 }
 
-// input para pesquisa
+// Input para pesquisa
 document.getElementById('pesquisaInput').addEventListener('input', debounce(e => {
     cadastroManager.exibirCadastros(e.target.value);
 }, 300));
 
-// Exibir cadastros ao carregar a pagina
+// Exibir cadastros ao carregar a página
 document.addEventListener('DOMContentLoaded', () => cadastroManager.exibirCadastros());
